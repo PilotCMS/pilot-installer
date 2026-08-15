@@ -31,7 +31,10 @@ class NewCommand extends Command
             ->addArgument('directory', InputArgument::OPTIONAL, 'Directory name or path', '.')
             ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Explicit installation path')
             ->addOption('branch', null, InputOption::VALUE_REQUIRED, 'Install a Git branch instead of the latest stable release')
-            ->addOption('no-build', null, InputOption::VALUE_NONE, 'Skip npm install and the production asset build');
+            ->addOption('no-build', null, InputOption::VALUE_NONE, 'Skip npm install and the production asset build')
+            ->addOption('site', null, InputOption::VALUE_REQUIRED, 'Herd site name (defaults to the directory name)')
+            ->addOption('secure', null, InputOption::VALUE_NONE, 'Secure the Herd site with a trusted HTTPS certificate')
+            ->addOption('no-herd', null, InputOption::VALUE_NONE, 'Do not automatically link the project with Laravel Herd');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -67,19 +70,25 @@ class NewCommand extends Command
                 $this->runProcess(['npm', 'run', 'build'], $target, $output);
             }
 
-            $projectName = basename($target);
+            $herdUrl = $this->configureHerd($input, $output, $io, $target);
+
             $io->success('Pilot was installed successfully.');
-            $io->writeln([
+            $instructions = [
                 'Open the project in your IDE:',
                 '  <info>cd '.$target.'</info>',
                 '',
-                'If this folder is served by Laravel Herd, open:',
-                '  <info>http://'.strtolower($projectName).'.test/setup</info>',
-                '',
-                'Otherwise start the local server:',
-                '  <info>php artisan serve</info>',
-                '  <info>http://127.0.0.1:8000/setup</info>',
-            ]);
+            ];
+
+            if ($herdUrl !== null) {
+                $instructions[] = 'Finish setup in your browser:';
+                $instructions[] = '  <info>'.$herdUrl.'/setup</info>';
+            } else {
+                $instructions[] = 'Start the local server and finish setup:';
+                $instructions[] = '  <info>php artisan serve</info>';
+                $instructions[] = '  <info>http://127.0.0.1:8000/setup</info>';
+            }
+
+            $io->writeln($instructions);
 
             return Command::SUCCESS;
         } catch (Throwable $exception) {
@@ -132,6 +141,73 @@ class NewCommand extends Command
         if (! $skipBuild && ! $finder->find('npm')) {
             throw new RuntimeException('npm was not found in your PATH. Use --no-build to install without frontend assets.');
         }
+    }
+
+    private function configureHerd(InputInterface $input, OutputInterface $output, SymfonyStyle $io, string $target): ?string
+    {
+        if ($input->getOption('no-herd')) {
+            return null;
+        }
+
+        $herd = (new ExecutableFinder)->find('herd');
+
+        if ($herd === null) {
+            if ($input->getOption('secure')) {
+                throw new RuntimeException('The --secure option requires Laravel Herd, but Herd was not found in your PATH.');
+            }
+
+            return null;
+        }
+
+        $site = $this->herdSiteName((string) ($input->getOption('site') ?: basename($target)));
+        $phpVersion = PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;
+        $command = [
+            $herd,
+            'link',
+            $site,
+            '--isolate='.$phpVersion,
+            '--update-env',
+            '--no-interaction',
+        ];
+
+        if ($input->getOption('secure')) {
+            $command[] = '--secure';
+        }
+
+        $io->section('Linking the project with Laravel Herd');
+        $linked = $this->runProcess($command, $target, $output, allowFailure: true);
+
+        if (! $linked) {
+            $io->warning('Pilot was installed, but Herd could not link the site. Run `herd link` inside the project or use `php artisan serve`.');
+
+            return null;
+        }
+
+        return ($input->getOption('secure') ? 'https://' : 'http://').$site.'.'.$this->herdTld($herd);
+    }
+
+    private function herdTld(string $herd): string
+    {
+        $process = new Process([$herd, 'tld'], timeout: 10);
+        $process->run();
+        $tld = trim($process->getOutput());
+
+        return $process->isSuccessful() && preg_match('/^[a-z0-9-]+$/i', $tld) === 1
+            ? strtolower($tld)
+            : 'test';
+    }
+
+    private function herdSiteName(string $name): string
+    {
+        $name = strtolower($name);
+        $name = (string) preg_replace('/[^a-z0-9-]+/', '-', $name);
+        $name = trim($name, '-');
+
+        if ($name === '') {
+            throw new RuntimeException('The Herd site name must contain at least one letter or number.');
+        }
+
+        return $name;
     }
 
     /** @return array{string, string} */
@@ -204,7 +280,7 @@ class NewCommand extends Command
     }
 
     /** @param list<string> $command */
-    private function runProcess(array $command, string $workingDirectory, OutputInterface $output, bool $allowFailure = false): void
+    private function runProcess(array $command, string $workingDirectory, OutputInterface $output, bool $allowFailure = false): bool
     {
         $process = new Process($command, $workingDirectory, timeout: null);
         $process->run(fn (string $type, string $buffer) => $output->write($buffer));
@@ -212,5 +288,7 @@ class NewCommand extends Command
         if (! $process->isSuccessful() && ! $allowFailure) {
             throw new RuntimeException(sprintf('Command failed: %s', $process->getCommandLine()));
         }
+
+        return $process->isSuccessful();
     }
 }

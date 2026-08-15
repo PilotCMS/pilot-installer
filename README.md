@@ -27,3 +27,26 @@ pilot new <directory> --no-build
 ```
 
 By default the command downloads the latest GitHub release archive from `WindfallInc/Pilot`. It falls back to the `main` branch until the first release exists.
+
+## Laravel Herd
+
+When Laravel Herd is available, `pilot new` automatically links the project, isolates it to the active PHP 8.4 release, updates `APP_URL`, and prints the browser setup URL:
+
+```bash
+pilot new my-project
+# Open http://my-project.test/setup
+```
+
+Use a trusted local HTTPS certificate:
+
+```bash
+pilot new my-project --secure
+# Open https://my-project.test/setup
+```
+
+Customize the Herd domain or skip Herd integration:
+
+```bash
+pilot new my-project --site=content-hub
+pilot new my-project --no-herd
+```
