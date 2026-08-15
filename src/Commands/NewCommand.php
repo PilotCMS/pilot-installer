@@ -23,7 +23,7 @@ use ZipArchive;
 #[AsCommand(name: 'new', description: 'Create a new Pilot CMS project')]
 class NewCommand extends Command
 {
-    private const REPOSITORY = 'WindfallInc/Pilot';
+    private const REPOSITORY = 'PilotCMS/Pilot';
 
     protected function configure(): void
     {
@@ -55,7 +55,8 @@ class NewCommand extends Command
             $this->downloadAndExtract($archiveUrl, $target, $filesystem);
 
             $io->section('Installing application dependencies');
-            $this->runProcess(['composer', 'install', '--no-interaction', '--prefer-dist'], $target, $output);
+            $composer = (new ExecutableFinder)->find('composer');
+            $this->runProcess([PHP_BINARY, (string) $composer, 'install', '--no-interaction', '--prefer-dist'], $target, $output);
 
             if (! file_exists($target.'/.env')) {
                 $filesystem->copy($target.'/.env.example', $target.'/.env');

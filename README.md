@@ -24,9 +24,14 @@ pilot new .
 pilot new --path=/absolute/path
 pilot new <directory> --branch=main
 pilot new <directory> --no-build
+pilot update
+pilot update --path=/absolute/path
+pilot update --dry-run
 ```
 
-By default the command downloads the latest GitHub release archive from `WindfallInc/Pilot`. It falls back to the `main` branch until the first release exists.
+By default the command downloads the latest GitHub release archive from `PilotCMS/Pilot`. It falls back to the `main` branch until the first release exists.
+
+`pilot update` updates the versioned `pilotcms/core` package, runs new database migrations, and rebuilds frontend assets. It refuses to change dirty Composer files unless you pass `--force`.
 
 ## Laravel Herd
 
