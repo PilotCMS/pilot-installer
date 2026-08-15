@@ -1,0 +1,24 @@
+{
+    "name": "pilotcms/installer",
+    "description": "Install new Pilot CMS projects from the command line.",
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": "^8.4.1",
+        "symfony/console": "^7.2",
+        "symfony/filesystem": "^7.2",
+        "symfony/http-client": "^7.2",
+        "symfony/process": "^7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pilot\\Installer\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/pilot"
+    ],
+    "config": {
+        "sort-packages": true
+    }
+}

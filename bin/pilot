@@ -1,0 +1,23 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Pilot\Installer\Application;
+
+$autoloaders = [
+    __DIR__.'/../vendor/autoload.php',
+    __DIR__.'/../../../autoload.php',
+];
+
+foreach ($autoloaders as $autoloader) {
+    if (file_exists($autoloader)) {
+        require $autoloader;
+        (new Application)->run();
+
+        exit;
+    }
+}
+
+fwrite(STDERR, "Pilot's Composer dependencies are missing. Run composer install in the installer directory.\n");
+exit(1);
