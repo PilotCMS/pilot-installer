@@ -57,11 +57,39 @@ class UpdateCommand extends Command
             $process = new Process($command, $project, timeout: null);
             $process->run(fn (string $type, string $buffer) => $output->write($buffer));
 
-            return $process->isSuccessful() ? Command::SUCCESS : Command::FAILURE;
+            if (! $process->isSuccessful()) {
+                return Command::FAILURE;
+            }
+
+            if (! $input->getOption('dry-run') && ! $this->hostUsesCoreAssets($project)) {
+                $finalize = [PHP_BINARY, 'artisan', 'pilot:finalize-update'];
+
+                if ($input->getOption('no-build')) {
+                    $finalize[] = '--no-build';
+                }
+
+                $io->section('Migrating the Pilot application host');
+                $process = new Process($finalize, $project, timeout: null);
+                $process->run(fn (string $type, string $buffer) => $output->write($buffer));
+
+                if (! $process->isSuccessful()) {
+                    return Command::FAILURE;
+                }
+            }
+
+            return Command::SUCCESS;
         } catch (Throwable $exception) {
             $io->error($exception->getMessage());
 
             return Command::FAILURE;
         }
+    }
+
+    private function hostUsesCoreAssets(string $project): bool
+    {
+        $stylesheet = $project.'/resources/css/app.css';
+
+        return file_exists($stylesheet)
+            && str_contains((string) file_get_contents($stylesheet), 'vendor/pilotcms/core/resources/css/app.css');
     }
 }
