@@ -45,12 +45,23 @@ class UpdateCommand extends Command
                 throw new RuntimeException('This project does not use the updatable pilotcms/core package.');
             }
 
+            if (! $input->getOption('force') && $this->composerFilesAreDirty($project)) {
+                throw new RuntimeException('composer.json or composer.lock has uncommitted changes. Commit them or use --force.');
+            }
+
+            $constraintsChanged = ! $input->getOption('dry-run')
+                && $this->updateManagedConstraints($project, $composer);
+
             $command = [PHP_BINARY, 'artisan', 'pilot:update'];
 
             foreach (['dry-run', 'no-build', 'force'] as $option) {
                 if ($input->getOption($option)) {
                     $command[] = '--'.$option;
                 }
+            }
+
+            if ($constraintsChanged && ! in_array('--force', $command, true)) {
+                $command[] = '--force';
             }
 
             $io->title('Updating Pilot');
@@ -91,5 +102,43 @@ class UpdateCommand extends Command
 
         return file_exists($stylesheet)
             && str_contains((string) file_get_contents($stylesheet), 'vendor/pilotcms/core/resources/css/app.css');
+    }
+
+    /** @param array<string, mixed> $composer */
+    private function updateManagedConstraints(string $project, array $composer): bool
+    {
+        $requirements = $composer['require'] ?? [];
+        $changed = false;
+
+        if (($requirements['pilotcms/core'] ?? null) !== '^0.2') {
+            $composer['require']['pilotcms/core'] = '^0.2';
+            $changed = true;
+        }
+
+        if (isset($requirements['pilot/laravel']) && $requirements['pilot/laravel'] !== '^0.1') {
+            $composer['require']['pilot/laravel'] = '^0.1';
+            $changed = true;
+        }
+
+        if ($changed) {
+            file_put_contents(
+                $project.'/composer.json',
+                json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL,
+            );
+        }
+
+        return $changed;
+    }
+
+    private function composerFilesAreDirty(string $project): bool
+    {
+        if (! is_dir($project.'/.git')) {
+            return false;
+        }
+
+        $process = new Process(['git', 'status', '--porcelain', '--', 'composer.json', 'composer.lock'], $project);
+        $process->run();
+
+        return $process->isSuccessful() && trim($process->getOutput()) !== '';
     }
 }

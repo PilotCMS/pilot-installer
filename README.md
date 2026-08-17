@@ -33,7 +33,7 @@ pilot update --dry-run
 
 By default the command downloads the latest GitHub release archive from `PilotCMS/Pilot`. It falls back to the `main` branch until the first release exists.
 
-`pilot update` updates the complete versioned application in `pilotcms/core`, migrates legacy host integration, installs managed frontend dependencies, runs new database migrations, rebuilds frontend assets, and clears application caches. It refuses to change dirty Composer files unless you pass `--force`.
+`pilot update` updates the complete versioned application in `pilotcms/core`, advances legacy managed package constraints when needed, migrates legacy host integration, installs managed frontend dependencies, runs new database migrations, rebuilds frontend assets, and clears application caches. It refuses to change dirty Composer files unless you pass `--force`.
 
 ## Laravel Herd
 

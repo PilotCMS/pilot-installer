@@ -13,7 +13,7 @@ class Application extends SymfonyApplication
 {
     public function __construct()
     {
-        parent::__construct('Pilot Installer', '0.2.1');
+        parent::__construct('Pilot Installer', '0.2.2');
 
         $this->add(new NewCommand);
         $this->add(new UpdateCommand);
