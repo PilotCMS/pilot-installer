@@ -23,7 +23,7 @@ class UpdateCommand extends Command
         $this
             ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Pilot project path', '.')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Check for an update without changing files')
-            ->addOption('no-build', null, InputOption::VALUE_NONE, 'Skip the frontend production build')
+            ->addOption('no-build', null, InputOption::VALUE_NONE, 'Skip the admin production build')
             ->addOption('force', null, InputOption::VALUE_NONE, 'Continue when Composer files have uncommitted changes');
     }
 

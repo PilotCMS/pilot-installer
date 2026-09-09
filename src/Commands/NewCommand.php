@@ -66,7 +66,7 @@ class NewCommand extends Command
             $this->runProcess([PHP_BINARY, 'artisan', 'storage:link', '--ansi'], $target, $output, allowFailure: true);
 
             if (! $input->getOption('no-build')) {
-                $io->section('Building frontend assets');
+                $io->section('Building admin assets');
                 $this->runProcess(['npm', 'install'], $target, $output);
                 $this->runProcess(['npm', 'run', 'build'], $target, $output);
             }
@@ -140,7 +140,7 @@ class NewCommand extends Command
         }
 
         if (! $skipBuild && ! $finder->find('npm')) {
-            throw new RuntimeException('npm was not found in your PATH. Use --no-build to install without frontend assets.');
+            throw new RuntimeException('npm was not found in your PATH. Use --no-build to install without admin assets.');
         }
     }
 

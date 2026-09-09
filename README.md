@@ -3,7 +3,8 @@
 The Pilot installer provides the global `pilot` executable used to create new Pilot CMS projects.
 
 ```bash
-composer global require pilotcms/installer
+composer global config repositories.pilot-installer vcs https://github.com/PilotCMS/pilot-installer.git
+composer global require pilotcms/installer:^0.2.3
 pilot new my-project
 ```
 
@@ -33,7 +34,7 @@ pilot update --dry-run
 
 By default the command downloads the latest GitHub release archive from `PilotCMS/Pilot`. It falls back to the `main` branch until the first release exists.
 
-`pilot update` updates the complete versioned application in `pilotcms/core`, advances legacy managed package constraints when needed, migrates legacy host integration, installs managed frontend dependencies, runs new database migrations, rebuilds frontend assets, and clears application caches. It refuses to change dirty Composer files unless you pass `--force`.
+`pilot update` updates the complete versioned application in `pilotcms/core`, advances legacy managed package constraints when needed, migrates legacy host integration, installs managed admin dependencies, runs new database migrations, rebuilds admin assets, and clears application caches. It refuses to change dirty Composer files unless you pass `--force`.
 
 ## Laravel Herd
 
